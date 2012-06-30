@@ -1,0 +1,254 @@
+#!/bin/bash
+
+# //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#
+# MissingTaco Version 3.0
+# Created by Justin Leavitt and Mike Caputo - Staten Island R152
+# Based on "missingkitty" script created by Chris Hyle
+# Email any bugs or feedback to: leavitt@apple.com
+#
+# 3.1: Imporved alert messages.
+# 3.0: Added support for Snow Leopard and Leopard.
+# 2.0: Added prompts to enabling ROOT.
+#
+# "Error has transformed animals into men; is truth perhaps capable of changing man back into an animal?"
+# - Friedrich Nietzsche
+#
+# //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+# Prompt for which OS
+
+echo "***********************************************************"
+echo "**                                                       **"
+echo "**                   Missing Taco                        **"
+echo "**                    Version 3                          **"
+echo "**     Please send feedback to leavitt@apple.com         **"
+echo "**                                                       **"
+echo "***********************************************************"
+echo ""
+
+echo "Choose your Operating System"
+echo ""
+echo "[1] Leopard / Snow Leopard (Must be run in SINGLE USER Mode)"
+echo "[2] Lion"
+echo ""
+read -p "Enter your number: " osver;
+
+# Run script for Leopard
+if [ "$osver" == 1 ]; then
+
+	/sbin/mount -uw /
+	
+	echo "** Executing MissingKitty"
+	echo ""
+	echo "** Found the following users:"
+	ls -1 /Users/ | grep -v "Shared" | grep -v "Deleted Users" | grep -v "\."
+	declare -a userarray
+	userarray=( `ls /Users/ | grep -v "Shared" | grep -v "Deleted Users" | grep -v "\."` )
+	for (( i = 0 ; i < ${#userarray[@]} ; i++ ));
+	do 
+		   echo -n "Delete user ${userarray[i]} (Y/N)?: "
+			   read -n 1 answer
+			   case "$answer" in
+			y|Y)
+			   rm -Rf "/Users/${userarray[i]}/"
+			   echo ""
+					   echo "${userarray[i]} deleted."
+			;;
+			n|N)
+				echo ""
+						echo "${userarray[i]} NOT deleted."
+			;;
+			*)
+				echo ""
+						echo "$answer unknown. Please answer Y or N." 
+				let i=(i-1)
+			;;
+			   esac 	
+	   echo ""
+	done
+	rm -Rf "/Users/Deleted Users/"
+	if [ -d /var/db/dslocal ]; then
+		 rm -Rf /var/db/dslocal
+		 mkdir -p /var/db/dslocal/nodes
+		 cp -Rp /System/Library/DirectoryServices/DefaultLocalDB/Default /var/db/dslocal/nodes/
+		 cp -Rp /System/Library/DirectoryServices/DefaultLocalDB/dsmappings /var/db/dslocal/
+	fi
+		 rm -rf /private/var/db/netinfo
+		 rm -rf /private/var/db/openldap
+		 rm -rf /private/var/db/samba
+		 rm -rf /private/var/db/dhcpclient
+		 rm -rf /var/db/.AppleSetupDone 
+		 rm -rf /Library/Caches
+		 rm -rf /Library/Logs
+		 rm -rf /Library/Preferences
+		 rm /missingtaco
+	
+	echo "** MissingKitty successfully removed user databases."
+	echo ""
+	echo "Press any key to shutdown."
+	read -n 1 nothing
+	/sbin/fsck -fy
+	shutdown -h now
+
+
+# Run script for Lion
+# Script is run in two steps.
+
+## Step 1
+elif [ "$osver" == 2 ]; then
+
+	# Enabling root (the first two commands must be executed as the superuser) 
+	# This script only runs if you are not root
+	if [[ $EUID -ne 0 ]]; then
+		echo "MissingTaco for Lion is run in three steps:"
+		echo "Step 1: Enable Root User"
+		echo "Step 2: Log in as Root and run ./missingtaco"
+		echo "Step 3: Run ./missingtaco in SINGLE USER MODE"
+		echo ""
+		echo "MissingTaco will guide you through each step."
+		echo ""
+		echo "** Step 1: Enabling Root User"
+		echo ""
+		echo "** Root User must be enabled first before MissingTaco can do it's magic."
+		echo ""
+		echo "To enable Root:"
+		echo "1. Directory Utility will open"
+		echo "2. Go to Edit > Enable Root User"
+		echo ""
+		
+		read -p "Press Enter to launch Directory Utility."
+		open -a Directory\ Utility.app
+
+		echo ""
+		read -p "** Press Enter after you enable Root."
+		echo ""
+
+		# Prompt to log in as root
+		echo "** Step 2. Logging in as Root"
+		echo ""
+		echo "You will now be logged in as root"
+		echo ""
+		echo "Once logged in as Root, run ./missingtaco again"
+		echo ""
+		read -p "Press Enter to continue"
+	
+		echo ""
+	
+		# Switch to root
+		sudo su
+	fi                                                                                                                                                                                                                  
+	
+	# When logged in as root, the script continues.
+	if [[ $EUID -ne 0 ]]; then
+		echo "You must be a root user"
+		echo "Enable Root or log in as root using 'sudo su'"
+		exit 1
+	else
+		# Performing initial steps.
+		echo "** Performing initial setup"
+		echo ""
+		echo "Found the following users:"
+		ls -1 /Users/ | grep -v "Shared" | grep -v "Deleted Users" | grep -v "\."
+		declare -a userarray
+		userarray=( `ls /Users/ | grep -v "Shared" | grep -v "Deleted Users" | grep -v "\."` )
+		for (( i = 0 ; i < ${#userarray[@]} ; i++ ));
+		do
+			   echo -n "Delete user ${userarray[i]} (Y/N)?: "
+			   read -n 1 answer
+			   case "$answer" in
+					y|Y)
+			   # dscl . -delete "/Groups/admin GroupMembership ${userarray[i]}"
+			   dscl . -delete /Groups/admin GroupMembership
+			   dscl . -delete "/Users/${userarray[i]}"
+			   echo ""
+					   echo "${userarray[i]} was deleted from the system."
+					;;
+					n|N)
+						echo ""
+						echo "${userarray[i]} NOT deleted from the system."
+					;;
+					*)
+						echo ""
+						echo "$answer unknown. Please answer Y or N."
+						let i=(i-1)
+					;;
+			   esac
+		echo ""
+		done
+	
+		echo "** Initial setup is complete, creating MissingTaco the script in /"
+		echo ""
+	
+	# Creating Missintaco script *******************************************************************
+	
+		touch /missingtaco
+	
+		echo "#!/bin/sh" >> /missingtaco
+	
+		#Mount the filesystem, otherwise the drive is read-only:
+		echo '/sbin/mount -uw /' >> /missingtaco
+	
+		# Remove the home folder for the user.
+		echo 'echo "Found the following users:"' >> /missingtaco
+		echo 'ls -1 /Users/ | grep -v "Shared" | grep -v "Deleted Users" | grep -v "\."' >> /missingtaco
+		echo 'declare -a userarray' >> /missingtaco
+		echo 'userarray=( `ls /Users/ | grep -v "Shared" | grep -v "Deleted Users" | grep -v "\."` )' >> /missingtaco
+		echo 'for (( i = 0 ; i < ${#userarray[@]} ; i++ ));' >> /missingtaco
+		echo 'do' >> /missingtaco 
+		echo '	echo -n "Delete user ${userarray[i]} (Y/N)?: "' >> /missingtaco
+		echo '	read -n 1 answer' >> /missingtaco
+		echo '	case "$answer" in' >> /missingtaco
+		echo '		y|Y)' >> /missingtaco
+		echo '		   rm -Rf "/Users/${userarray[i]}/"' >> /missingtaco
+		echo '		   echo ""' >> /missingtaco
+		echo '		   echo "${userarray[i]} deleted."' >> /missingtaco
+		echo '		;;' >> /missingtaco
+		echo '		n|N)' >> /missingtaco
+		echo '		   echo ""' >> /missingtaco
+		echo '		   echo "${userarray[i]} NOT deleted."' >> /missingtaco
+		echo '		;;' >> /missingtaco
+		echo '		*)' >> /missingtaco
+		echo '		   echo ""' >> /missingtaco
+		echo '		   echo "$answer unknown. Please answer Y or N."' >> /missingtaco 
+		echo '		   let i=(i-1)' >> /missingtaco
+		echo '		;;' >> /missingtaco
+		echo '	esac' >> /missingtaco 	
+		echo '	echo ""' >> /missingtaco
+		echo 'done' >> /missingtaco
+	
+		# Rename .AppleSetupDone so you get the language choice:
+		echo 'cd /var/db/' >> /missingtaco
+		echo 'mv .AppleSetupDone .RunLanguageChooserToo' >> /missingtaco
+	
+		# Delete miscellaneous files:
+		echo 'rm -R /Library/Caches/*' >> /missingtaco
+		echo 'rm -R /System/Library/Caches/*' >> /missingtaco
+		echo 'rm -R /var/vm/swapfile*' >> /missingtaco
+		echo 'rm /missingtaco' >> /missingtaco
+	
+		echo 'echo "MissingTaco successfully removed users."' >> /missingtaco
+		echo 'echo ""' >> /missingtaco
+		echo 'echo "Press any key to shutdown."' >> /missingtaco
+		echo 'read -n 1 nothing' >> /missingtaco
+		echo 'shutdown -h now' >> /missingtaco
+	
+	# Creating script complete *******************************************************************
+	
+		# Change script permissions
+		chmod 755 /missingtaco
+	
+		echo "** MissingTaco has been created"
+		echo "** MissingTaco scrip is almost complete"
+		echo ""
+		echo "Reboot into SINGLE USER mode and then execute missingtaco."
+		echo ""
+	
+	fi
+else 
+	echo "!!! Invalid input !!!"
+	echo "YOU BROKE ME"
+	echo "Run MissingTaco again"
+	exit 1
+fi
