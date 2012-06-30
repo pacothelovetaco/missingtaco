@@ -3,9 +3,8 @@
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #
 # MissingTaco Version 3.0
-# Created by Justin Leavitt and Mike Caputo - Staten Island R152
+# Created by Justin Leavitt
 # Based on "missingkitty" script created by Chris Hyle
-# Email any bugs or feedback to: leavitt@apple.com
 #
 # 3.1: Imporved alert messages.
 # 3.0: Added support for Snow Leopard and Leopard.
@@ -23,7 +22,6 @@ echo "***********************************************************"
 echo "**                                                       **"
 echo "**                   Missing Taco                        **"
 echo "**                    Version 3                          **"
-echo "**     Please send feedback to leavitt@apple.com         **"
 echo "**                                                       **"
 echo "***********************************************************"
 echo ""
@@ -53,16 +51,16 @@ if [ "$osver" == 1 ]; then
 			   case "$answer" in
 			y|Y)
 			   rm -Rf "/Users/${userarray[i]}/"
-			   echo ""
-					   echo "${userarray[i]} deleted."
+			   	echo ""
+				echo "${userarray[i]} deleted."
 			;;
 			n|N)
 				echo ""
-						echo "${userarray[i]} NOT deleted."
+				echo "${userarray[i]} NOT deleted."
 			;;
 			*)
 				echo ""
-						echo "$answer unknown. Please answer Y or N." 
+				echo "$answer unknown. Please answer Y or N." 
 				let i=(i-1)
 			;;
 			   esac 	
